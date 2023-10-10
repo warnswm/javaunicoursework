@@ -1,0 +1,36 @@
+.label {
+    -fx-font-family: "Arial";
+    -fx-font-size: 16px;
+    -fx-text-fill: #333; /* Цвет текста */
+    -fx-background-color: transparent; /* Прозрачный фон */
+    -fx-padding: 0; /* Убираем внутренний отступ */
+    -fx-border-width: 0; /* Убираем границы */
+}
+
+/*#2E303E*/
+.label:hover {
+    -fx-background-color: #206579; /* Изменение цвета фона при наведении курсора */
+    -fx-text-fill: #E9EBFC; /* Изменение цвета текста при наведении курсора */
+}
+
+.root {
+    -fx-background-color: #f8f9fa;
+}
+
+.text-field {
+    -fx-border-color: grey;
+    -fx-border-width: 0 0 1 0;
+    -fx-background-color: transparent;
+}
+.text-field:focused {
+    -fx-background-color: -fx-focus-color, -fx-background ;
+}
+.button#myB{
+    -fx-padding: 0;
+    -fx-pref-height: 25;
+    -fx-pref-width: 100;
+}
+.choice-box .label:hover {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333;
+}
