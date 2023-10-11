@@ -5,6 +5,8 @@ import com.example.javaunicoursework.EShop.BathroomFurniture;
 import com.example.javaunicoursework.EShop.InternetShop;
 import com.example.javaunicoursework.EShop.KitchenFurniture;
 import com.example.javaunicoursework.EShop.LivingRoomFurniture;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -14,6 +16,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.bson.Document;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,10 +25,11 @@ import java.util.Objects;
 
 public class MainScene {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-    private Label shopnameLabel, productNameLabel, sellAmountLabel, countryOfOriginLabel, saleDateLabel, customerNameLabel,
+    private Label shopNameLabel, productNameLabel, sellAmountLabel, countryOfOriginLabel, saleDateLabel, customerNameLabel,
             paymentMethodLabel, furnitureTypeLabel, manufacturerLabel, lengthLabel, heightLabel, widthLabel, materialLabel;
-    private TextField shopnameEntry, productNameEntry, sellAmountEntry, countryOfOriginEntry, saleDateEntry, customerNameEntry,
+    private TextField shopNameEntry, productNameEntry, sellAmountEntry, countryOfOriginEntry, saleDateEntry, customerNameEntry,
             furnitureTypeEntry, paymentMethodEntry, manufacturerEntry, lengthEntry, heightEntry, widthEntry, materialEntry;
+    private ObservableList<Document> data = FXCollections.observableArrayList();
 
     public Scene initScene(Database database) {
         GridPane grid = new GridPane();
@@ -36,14 +40,10 @@ public class MainScene {
 
         Label storeChoiceLabel = new Label("Выберите магазин:");
         grid.add(storeChoiceLabel, 0, 0);
-        ChoiceBox<String> storeChoice = createChoiceBox("Интернет-магазин", "Интернет-магазин", "Мебель для гостиных", "Мебель для кухни", "Мебель для ванн");
+        ChoiceBox<String> storeChoice = createChoiceBox("Интернет-магазин", "Мебель для гостиных", "Мебель для кухни", "Мебель для ванн");
         grid.add(storeChoice, 1, 0);
-        Label storeChoiceLabel2 = new Label("Выберите категорию для сортировки:");
-        grid.add(storeChoiceLabel2, 3, 0);
-        ChoiceBox<String> storeChoice2 = createChoiceBox("Интернет-магазин", "Интернет-магазин", "Мебель для гостиных", "Мебель для кухни", "Мебель для ванн");
-        grid.add(storeChoice2, 4, 0);
 
-        initLabelandTextField(grid);
+        initLabelAndTextField(grid);
 
         storeChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateFields(newValue));
 
@@ -53,25 +53,91 @@ public class MainScene {
 
         addButton.setOnAction(e -> addButtonClicked(database, storeChoice));
 
-        TableView<String> tableView = new TableView<>();
+        TableView<Document> tableView = new TableView<>();
+        tableView.setEditable(false);
+        database.setCollection(database.getDatabase().getCollection("InternetShop"));
+        loadDataFromCollection(database, tableView);
+        tableView.setItems(data);
+        tableView.setPrefWidth(800);
+        tableView.setPrefHeight(400);
 
-        storeChoice2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue));
+        storeChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue, database, tableView));
+
+
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            Object selectedStore = storeChoice.getSelectionModel().getSelectedItem();
+
+            if (newSelection != null) {
+                shopNameEntry.setText(newSelection.getString("shopName"));
+                productNameEntry.setText(String.valueOf(newSelection.getString("productName")));
+                countryOfOriginEntry.setText(newSelection.getString("countryOfOrigin"));
+                paymentMethodEntry.setText(newSelection.getString("paymentMethod"));
+                sellAmountEntry.setText(String.valueOf(newSelection.getDouble("purchaseAmount")));
+                saleDateEntry.setText(String.valueOf(newSelection.getDate("saleDate")));
+                customerNameEntry.setText(newSelection.getString("customerName"));
+                if (selectedStore.equals("Мебель для гостиных")) {
+                    furnitureTypeEntry.setText(newSelection.getString("furnitureType"));
+                    manufacturerEntry.setText(newSelection.getString("manufacturer"));
+                }
+                if (selectedStore.equals("Мебель для кухни")){
+                    lengthEntry.setText(String.valueOf(newSelection.getDouble("length")));
+                    heightEntry.setText(String.valueOf(newSelection.getDouble("height")));
+                    widthEntry.setText(String.valueOf(newSelection.getDouble("width")));
+                    materialEntry.setText(newSelection.getString("material"));
+                }
+
+            }
+        });
 
         HBox hbox = new HBox();
+        VBox vBox = new VBox();
+        vBox.getChildren().add(tableView);
         hbox.getChildren().add(grid);
-        hbox.getChildren().add(tableView);
-        return new Scene(hbox, 1200, 600);
+        hbox.getChildren().add(vBox);
+        return new Scene(hbox, 1200, 450);
     }
 
-    private void updateTable(String storeChoice){
-        boolean isStore0Selected = Objects.equals(storeChoice, "Интернет-магазин");
-        boolean isStore1Selected = Objects.equals(storeChoice, "Мебель для гостиных");
-        boolean isStore2Selected = Objects.equals(storeChoice, "Мебель для кухни");
-        boolean isStore3Selected = Objects.equals(storeChoice, "Мебель для ванн");
+    private void updateTable(String storeChoice, Database database, TableView<Document> tableView) {
+        shopNameEntry.clear();
+        productNameEntry.clear();
+        sellAmountEntry.clear();
+        countryOfOriginEntry.clear();
+        saleDateEntry.clear();
+        customerNameEntry.clear();
+        furnitureTypeEntry.clear();
+        paymentMethodEntry.clear();
+        manufacturerEntry.clear();
+        lengthEntry.clear();
+        heightEntry.clear();
+        widthEntry.clear();
+        materialEntry.clear();
+        switch (storeChoice) {
+            case "Интернет-магазин" -> database.setCollection(database.getDatabase().getCollection("InternetShop"));
+            case "Мебель для гостиных" ->
+                    database.setCollection(database.getDatabase().getCollection("LivingRoomFurniture"));
+            case "Мебель для кухни" ->
+                    database.setCollection(database.getDatabase().getCollection("BathroomFurniture"));
+            case "Мебель для ванн" -> database.setCollection(database.getDatabase().getCollection("KitchenFurniture"));
+        }
+        loadDataFromCollection(database, tableView);
     }
-    private void initTable(){
 
+    private void loadDataFromCollection(Database database, TableView<Document> tableView) {
+        data.clear();
+        tableView.getColumns().clear();
+        Objects.requireNonNull(database.getCollection().find().first()).forEach((key, value) -> {
+            if (!key.equals("_id")) {
+                TableColumn<Document, Object> column = new TableColumn<>(key);
+                column.setCellValueFactory(param -> {
+                    Document document = param.getValue();
+                    return javafx.beans.binding.Bindings.createObjectBinding(() -> document.getOrDefault(key, null));
+                });
+                tableView.getColumns().add(column);
+            }
+        });
+        database.getCollection().find().forEach(data::add);
     }
+
     private Button createButton() {
         String url = "https://icon-library.com/images/new-button-icon/new-button-icon-2.jpg";
         Image image = new Image(url);
@@ -94,8 +160,8 @@ public class MainScene {
         boolean isStore3Selected = Objects.equals(storeChoice, "Мебель для ванн");
         setVisibilityAndManagedStatus(isStore0Selected || isStore1Selected || isStore2Selected || isStore3Selected,
                 isStore0Selected || isStore1Selected || isStore2Selected || isStore3Selected,
-                shopnameLabel, productNameLabel, countryOfOriginLabel, paymentMethodLabel, sellAmountLabel, saleDateLabel, customerNameLabel,
-                shopnameEntry, productNameEntry, countryOfOriginEntry, paymentMethodEntry, sellAmountEntry, saleDateEntry, customerNameEntry);
+                shopNameLabel, productNameLabel, countryOfOriginLabel, paymentMethodLabel, sellAmountLabel, saleDateLabel, customerNameLabel,
+                shopNameEntry, productNameEntry, countryOfOriginEntry, paymentMethodEntry, sellAmountEntry, saleDateEntry, customerNameEntry);
 
         setVisibilityAndManagedStatus(isStore1Selected, isStore1Selected,
                 furnitureTypeLabel, manufacturerLabel,
@@ -114,8 +180,8 @@ public class MainScene {
         }
     }
 
-    private void initLabelandTextField(GridPane grid) {
-        shopnameLabel = new Label("Название магазина");
+    private void initLabelAndTextField(GridPane grid) {
+        shopNameLabel = new Label("Название магазина");
         productNameLabel = new Label("Название товара");
         countryOfOriginLabel = new Label("Страна производитель");
         paymentMethodLabel = new Label("Вид оплаты");
@@ -129,7 +195,7 @@ public class MainScene {
         widthLabel = new Label("Ширина:");
         materialLabel = new Label("Материал:");
 
-        shopnameEntry = new TextField();
+        shopNameEntry = new TextField();
         productNameEntry = new TextField();
         countryOfOriginEntry = new TextField();
         paymentMethodEntry = new TextField();
@@ -143,8 +209,8 @@ public class MainScene {
         widthEntry = new TextField();
         materialEntry = new TextField();
 
-        grid.add(shopnameLabel, 0, 1);
-        grid.add(shopnameEntry, 1, 1);
+        grid.add(shopNameLabel, 0, 1);
+        grid.add(shopNameEntry, 1, 1);
         grid.add(productNameLabel, 0, 2);
         grid.add(productNameEntry, 1, 2);
         grid.add(countryOfOriginLabel, 0, 3);
@@ -177,7 +243,7 @@ public class MainScene {
     }
 
     private void addButtonClicked(Database database, ChoiceBox<String> storeChoice) {
-        if (shopnameEntry.getText().isEmpty() | productNameEntry.getText().isEmpty() |
+        if (shopNameEntry.getText().isEmpty() | productNameEntry.getText().isEmpty() |
                 countryOfOriginEntry.getText().isEmpty() | paymentMethodEntry.getText().isEmpty()
                 | sellAmountEntry.getText().isEmpty() | saleDateEntry.getText().isEmpty()
                 | countryOfOriginEntry.getText().isEmpty()) {
@@ -185,11 +251,11 @@ public class MainScene {
             return;
         }
 
-        String shopName = shopnameEntry.getText();
+        String shopName = shopNameEntry.getText();
         String productName = productNameEntry.getText();
         String countryOfOrigin = countryOfOriginEntry.getText();
         String paymentMethod = paymentMethodEntry.getText();
-        double purchaseAmount = 0.0;
+        double purchaseAmount;
         try {
             purchaseAmount = Double.parseDouble(sellAmountEntry.getText());
         } catch (Exception e) {
@@ -245,10 +311,10 @@ public class MainScene {
         }
     }
 
-    private ChoiceBox<String> createChoiceBox(String defaultChoice, String... items) {
+    private ChoiceBox<String> createChoiceBox(String... items) {
         ChoiceBox<String> choiceBox = new ChoiceBox<>();
         choiceBox.getItems().addAll(items);
-        choiceBox.setValue(defaultChoice);
+        choiceBox.setValue("Интернет-магазин");
         return choiceBox;
     }
 

@@ -9,14 +9,19 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import lombok.Getter;
+import lombok.Setter;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Database {
+    @Getter
+    @Setter
     private MongoCollection<Document> collection;
     private final Logger logger = LoggerFactory.getLogger(Database.class.getName());
     private MongoClient mongoClient;
+    @Getter
     private MongoDatabase database;
 
     public Database() {
