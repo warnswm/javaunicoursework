@@ -29,7 +29,7 @@ public class MainScene {
             paymentMethodLabel, furnitureTypeLabel, manufacturerLabel, lengthLabel, heightLabel, widthLabel, materialLabel;
     private TextField shopNameEntry, productNameEntry, sellAmountEntry, countryOfOriginEntry, saleDateEntry, customerNameEntry,
             furnitureTypeEntry, paymentMethodEntry, manufacturerEntry, lengthEntry, heightEntry, widthEntry, materialEntry;
-    private ObservableList<Document> data = FXCollections.observableArrayList();
+    private final ObservableList<Document> data = FXCollections.observableArrayList();
 
     public Scene initScene(Database database) {
         GridPane grid = new GridPane();
@@ -47,11 +47,16 @@ public class MainScene {
 
         storeChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateFields(newValue));
 
-        Button addButton = createButton();
-
+        String addbuttonurl = "https://icon-library.com/images/new-button-icon/new-button-icon-2.jpg";
+        Image addbuttonimage = new Image(addbuttonurl);
+        ImageView addbuttonicon = new ImageView(addbuttonimage);
+        Button addButton = createButton("Добавить", addbuttonicon);
+        String deletebuttonurl = "https://cdn-icons-png.flaticon.com/512/1214/1214428.png";
+        Image deletebuttonimage = new Image(deletebuttonurl);
+        ImageView deletebuttonicon = new ImageView(deletebuttonimage);
+        Button deleteButton = createButton("Удалить", deletebuttonicon);
         grid.add(addButton, 0, 14);
-
-        addButton.setOnAction(e -> addButtonClicked(database, storeChoice));
+        grid.add(deleteButton, 1, 14);
 
         TableView<Document> tableView = new TableView<>();
         tableView.setEditable(false);
@@ -61,8 +66,8 @@ public class MainScene {
         tableView.setPrefWidth(800);
         tableView.setPrefHeight(400);
 
+        addButton.setOnAction(e -> addButtonClicked(database, storeChoice, tableView));
         storeChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue, database, tableView));
-
 
         tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             Object selectedStore = storeChoice.getSelectionModel().getSelectedItem();
@@ -125,26 +130,29 @@ public class MainScene {
     private void loadDataFromCollection(Database database, TableView<Document> tableView) {
         data.clear();
         tableView.getColumns().clear();
-        Objects.requireNonNull(database.getCollection().find().first()).forEach((key, value) -> {
-            if (!key.equals("_id")) {
-                TableColumn<Document, Object> column = new TableColumn<>(key);
-                column.setCellValueFactory(param -> {
-                    Document document = param.getValue();
-                    return javafx.beans.binding.Bindings.createObjectBinding(() -> document.getOrDefault(key, null));
-                });
-                tableView.getColumns().add(column);
-            }
-        });
-        database.getCollection().find().forEach(data::add);
+        try {
+
+
+            Objects.requireNonNull(database.getCollection().find().first()).forEach((key, value) -> {
+                if (!key.equals("_id")) {
+                    TableColumn<Document, Object> column = new TableColumn<>(key);
+                    column.setCellValueFactory(param -> {
+                        Document document = param.getValue();
+                        return javafx.beans.binding.Bindings.createObjectBinding(() -> document.getOrDefault(key, null));
+                    });
+                    tableView.getColumns().add(column);
+                }
+            });
+            database.getCollection().find().forEach(data::add);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 
-    private Button createButton() {
-        String url = "https://icon-library.com/images/new-button-icon/new-button-icon-2.jpg";
-        Image image = new Image(url);
-        ImageView icon = new ImageView(image);
+    private Button createButton(String text, ImageView icon) {
         icon.setFitWidth(20);
         icon.setFitHeight(21);
-        Button addButton = new Button("Добавить", icon);
+        Button addButton = new Button(text, icon);
         addButton.setVisible(true);
         addButton.setManaged(true);
         addButton.setId("myB");
@@ -242,7 +250,15 @@ public class MainScene {
                 furnitureTypeLabel, manufacturerLabel, lengthLabel, heightLabel, widthLabel, materialLabel);
     }
 
-    private void addButtonClicked(Database database, ChoiceBox<String> storeChoice) {
+    private void deleteButtonClicked(Database database, ChoiceBox<String> storeChoice, TableView<Document> tableView){
+        if (shopNameEntry.getText().isEmpty() | productNameEntry.getText().isEmpty() ){
+            alert();
+            return;
+        }
+        String shopName = shopNameEntry.getText();
+        String productName = productNameEntry.getText();
+    }
+    private void addButtonClicked(Database database, ChoiceBox<String> storeChoice, TableView<Document> tableView) {
         if (shopNameEntry.getText().isEmpty() | productNameEntry.getText().isEmpty() |
                 countryOfOriginEntry.getText().isEmpty() | paymentMethodEntry.getText().isEmpty()
                 | sellAmountEntry.getText().isEmpty() | saleDateEntry.getText().isEmpty()
@@ -309,6 +325,7 @@ public class MainScene {
                 database.addToDatabase(bathroomFurniture);
             }
         }
+        loadDataFromCollection(database, tableView);
     }
 
     private ChoiceBox<String> createChoiceBox(String... items) {
