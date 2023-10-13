@@ -2,7 +2,6 @@ package com.example.javaunicoursework.Scenes;
 
 import com.example.javaunicoursework.Database;
 import com.example.javaunicoursework.EShop.BathroomFurniture;
-import com.example.javaunicoursework.EShop.InternetShop;
 import com.example.javaunicoursework.EShop.KitchenFurniture;
 import com.example.javaunicoursework.EShop.LivingRoomFurniture;
 import javafx.collections.FXCollections;
@@ -37,10 +36,16 @@ public class MainScene {
         grid.setPadding(new Insets(20, 20, 20, 20));
         String css = Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm();
         grid.getStylesheets().add(css);
+        grid.setStyle("fx-padding: 10;" +
+                "-fx-border-style: solid inside;" +
+                "-fx-border-width: 2;" +
+                "-fx-border-insets: 5;" +
+                "-fx-border-radius: 5;" +
+                "-fx-border-color: #0BAAE4;");
 
         Label storeChoiceLabel = new Label("Выберите магазин:");
         grid.add(storeChoiceLabel, 0, 0);
-        ChoiceBox<String> storeChoice = createChoiceBox("Интернет-магазин", "Мебель для гостиных", "Мебель для кухни", "Мебель для ванн");
+        ChoiceBox<String> storeChoice = createChoiceBox("Мебель для гостиных", "Мебель для кухни", "Мебель для ванн");
         grid.add(storeChoice, 1, 0);
 
         initLabelAndTextField(grid);
@@ -60,7 +65,8 @@ public class MainScene {
 
         TableView<Document> tableView = new TableView<>();
         tableView.setEditable(false);
-        database.setCollection(database.getDatabase().getCollection("InternetShop"));
+        tableView.setPadding(new Insets(5, 0, 0, 0));
+        database.setCollection(database.getDatabase().getCollection("LivingRoomFurniture"));
         loadDataFromCollection(database, tableView);
         tableView.setItems(data);
         tableView.setPrefWidth(800);
@@ -120,7 +126,6 @@ public class MainScene {
         widthEntry.clear();
         materialEntry.clear();
         switch (storeChoice) {
-            case "Интернет-магазин" -> database.setCollection(database.getDatabase().getCollection("InternetShop"));
             case "Мебель для гостиных" ->
                     database.setCollection(database.getDatabase().getCollection("LivingRoomFurniture"));
             case "Мебель для кухни" ->
@@ -164,12 +169,11 @@ public class MainScene {
     }
 
     private void updateFields(String storeChoice) {
-        boolean isStore0Selected = Objects.equals(storeChoice, "Интернет-магазин");
         boolean isStore1Selected = Objects.equals(storeChoice, "Мебель для гостиных");
         boolean isStore2Selected = Objects.equals(storeChoice, "Мебель для кухни");
         boolean isStore3Selected = Objects.equals(storeChoice, "Мебель для ванн");
-        setVisibilityAndManagedStatus(isStore0Selected || isStore1Selected || isStore2Selected || isStore3Selected,
-                isStore0Selected || isStore1Selected || isStore2Selected || isStore3Selected,
+        setVisibilityAndManagedStatus(isStore1Selected || isStore2Selected || isStore3Selected,
+                isStore1Selected || isStore2Selected || isStore3Selected,
                 shopNameLabel, productNameLabel, countryOfOriginLabel, paymentMethodLabel, sellAmountLabel, saleDateLabel, customerNameLabel,
                 shopNameEntry, productNameEntry, countryOfOriginEntry, paymentMethodEntry, sellAmountEntry, saleDateEntry, customerNameEntry);
 
@@ -192,18 +196,57 @@ public class MainScene {
 
     private void initLabelAndTextField(GridPane grid) {
         shopNameLabel = new Label("Название магазина");
+        Tooltip shopNameTT = new Tooltip("Название магазина");
+        shopNameLabel.setTooltip(shopNameTT);
+
         productNameLabel = new Label("Название товара");
+        Tooltip productNameTT = new Tooltip("Название товара");
+        productNameLabel.setTooltip(productNameTT);
+
         countryOfOriginLabel = new Label("Страна производитель");
+        Tooltip countryOfOriginTT = new Tooltip("Страна производитель");
+        countryOfOriginLabel.setTooltip(countryOfOriginTT);
+
         paymentMethodLabel = new Label("Вид оплаты");
+        Tooltip paymentMethodTT = new Tooltip("Вид оплаты");
+        paymentMethodLabel.setTooltip(paymentMethodTT);
+
         sellAmountLabel = new Label("Цена:");
+        Tooltip sellAmountTT = new Tooltip("Цена");
+        sellAmountLabel.setTooltip(sellAmountTT);
+
         saleDateLabel = new Label("Дата продажи");
+        Tooltip saleDateTT = new Tooltip("Дата продажи");
+        saleDateLabel.setTooltip(saleDateTT);
+
         customerNameLabel = new Label("ФИО покупателя");
+        Tooltip customerNameTT = new Tooltip("ФИО покупателя");
+        customerNameLabel.setTooltip(customerNameTT);
+
         furnitureTypeLabel = new Label("Тип мебели:");
+        Tooltip furnitureTypeTT = new Tooltip("Тип мебели");
+        furnitureTypeLabel.setTooltip(furnitureTypeTT);
+
         manufacturerLabel = new Label("Производитель:");
+        Tooltip manufacturerTT = new Tooltip("Производитель");
+        manufacturerLabel.setTooltip(manufacturerTT);
+
         lengthLabel = new Label("Длина:");
+        Tooltip lengthTT = new Tooltip("Длина товара");
+        lengthLabel.setTooltip(lengthTT);
+
         heightLabel = new Label("Высота:");
+        Tooltip heightTT = new Tooltip("Высота товара");
+        heightLabel.setTooltip(heightTT);
+
         widthLabel = new Label("Ширина:");
+        Tooltip widthTT = new Tooltip("Ширина товара");
+        widthLabel.setTooltip(widthTT);
+
         materialLabel = new Label("Материал:");
+        Tooltip materialTT = new Tooltip("Материал товара");
+        materialLabel.setTooltip(materialTT);
+
 
         shopNameEntry = new TextField();
         productNameEntry = new TextField();
@@ -304,11 +347,6 @@ public class MainScene {
         String customerName = countryOfOriginEntry.getText();
         String selectedStore = storeChoice.getValue();
         switch (selectedStore) {
-            case "Интернет-магазин" -> {
-                InternetShop internetShop = new InternetShop(shopName, productName, countryOfOrigin, paymentMethod, purchaseAmount,
-                        saleDate, customerName);
-                database.addToDatabase(internetShop);
-            }
             case "Мебель для гостиных" -> {
                 if (furnitureTypeEntry.getText().isEmpty() | manufacturerEntry.getText().isEmpty()) {
                     alert();
@@ -346,7 +384,7 @@ public class MainScene {
     private ChoiceBox<String> createChoiceBox(String... items) {
         ChoiceBox<String> choiceBox = new ChoiceBox<>();
         choiceBox.getItems().addAll(items);
-        choiceBox.setValue("Интернет-магазин");
+        choiceBox.setValue("Мебель для гостиных");
         return choiceBox;
     }
 
