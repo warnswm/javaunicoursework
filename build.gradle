@@ -47,9 +47,6 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.9'
     implementation group: 'org.projectlombok', name: 'lombok', version: '1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
-
-
-
 }
 
 test {

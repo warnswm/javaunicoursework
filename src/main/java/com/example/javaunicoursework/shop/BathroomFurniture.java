@@ -1,6 +1,7 @@
-package com.example.javaunicoursework.EShop;
+package com.example.javaunicoursework.shop;
 
 import lombok.Getter;
+
 import java.util.Date;
 
 @Getter
