@@ -65,6 +65,9 @@ public class MainScene {
         tableView.setItems(data);
         tableView.setPrefWidth(800);
         tableView.setPrefHeight(400);
+        tableView.getStylesheets().add(css);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
 
         addButton.setOnAction(e -> addButtonClicked(database, storeChoice, tableView));
         storeChoice.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue, database, tableView));
@@ -131,8 +134,6 @@ public class MainScene {
         data.clear();
         tableView.getColumns().clear();
         try {
-
-
             Objects.requireNonNull(database.getCollection().find().first()).forEach((key, value) -> {
                 if (!key.equals("_id")) {
                     TableColumn<Document, Object> column = new TableColumn<>(key);
@@ -147,6 +148,7 @@ public class MainScene {
         } catch (Exception e) {
             System.out.println(e);
         }
+
     }
 
     private Button createButton(String text, ImageView icon) {
@@ -244,6 +246,19 @@ public class MainScene {
         grid.add(materialLabel, 0, 13);
         grid.add(materialEntry, 1, 13);
 
+        shopNameLabel.setId("grid");
+        productNameLabel.setId("grid");
+        countryOfOriginLabel.setId("grid");
+        paymentMethodLabel.setId("grid");
+        sellAmountLabel.setId("grid");
+        saleDateLabel.setId("grid");
+        customerNameLabel.setId("grid");
+        furnitureTypeLabel.setId("grid");
+        manufacturerLabel.setId("grid");
+        lengthLabel.setId("grid");
+        heightLabel.setId("grid");
+        widthLabel.setId("grid");
+        materialLabel.setId("grid");
         setVisibilityAndManagedStatus(false,
                 false,
                 furnitureTypeEntry, manufacturerEntry, lengthEntry, heightEntry, widthEntry, materialEntry,
