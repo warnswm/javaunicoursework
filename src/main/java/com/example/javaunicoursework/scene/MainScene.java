@@ -28,6 +28,9 @@ public class MainScene {
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
     ChoiceManager choiceManager = new ChoiceManager();
     private final ObservableList<Document> data = FXCollections.observableArrayList();
+    private static final String ADD_BUTTON_URL = "https://icon-library.com/images/new-button-icon/new-button-icon-2.jpg";
+    private static final String DELETE_BUTTON_URL = "https://cdn-icons-png.flaticon.com/512/1214/1214428.png";
+
 
     public Scene initScene(IDatabase database) {
         GridPane grid = new GridPane();
@@ -42,17 +45,10 @@ public class MainScene {
                 "-fx-border-radius: 5;" +
                 "-fx-border-color: #0BAAE4;");
 
-
         choiceManager.initChoiceManager(grid);
 
-        String addbuttonurl = "https://icon-library.com/images/new-button-icon/new-button-icon-2.jpg";
-        Image addbuttonimage = new Image(addbuttonurl);
-        ImageView addbuttonicon = new ImageView(addbuttonimage);
-        Button addButton = createButton("Добавить", addbuttonicon);
-        String deletebuttonurl = "https://cdn-icons-png.flaticon.com/512/1214/1214428.png";
-        Image deletebuttonimage = new Image(deletebuttonurl);
-        ImageView deletebuttonicon = new ImageView(deletebuttonimage);
-        Button deleteButton = createButton("Удалить", deletebuttonicon);
+        Button addButton = createButton("Добавить", ADD_BUTTON_URL);
+        Button deleteButton = createButton("Удалить", DELETE_BUTTON_URL);
         grid.add(addButton, 0, 14);
         grid.add(deleteButton, 1, 14);
 
@@ -66,7 +62,6 @@ public class MainScene {
         tableView.setPrefHeight(400);
         tableView.getStylesheets().add(css);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
 
         addButton.setOnAction(e -> addButtonClicked(database, tableView));
         choiceManager.getStoreChoice().getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue, database, tableView));
@@ -119,16 +114,26 @@ public class MainScene {
         database.updateTableView(tableView, data);
     }
 
-    private Button createButton(String text, ImageView icon) {
-        icon.setFitWidth(20);
-        icon.setFitHeight(21);
-        Button addButton = new Button(text, icon);
-        addButton.setVisible(true);
-        addButton.setManaged(true);
-        addButton.setId("myB");
-        addButton.getStyleClass().add("button");
+    public Button createButton(String text, String iconUrl) {
+        ImageView icon = createButtonIcon(iconUrl);
+        Button button = new Button(text, icon);
+        customizeButton(button);
+        return button;
+    }
 
-        return addButton;
+    private ImageView createButtonIcon(String imageUrl) {
+        Image buttonImage = new Image(imageUrl);
+        ImageView buttonIcon = new ImageView(buttonImage);
+        buttonIcon.setFitWidth(20);
+        buttonIcon.setFitHeight(21);
+        return buttonIcon;
+    }
+
+    private void customizeButton(Button button) {
+        button.setVisible(true);
+        button.setManaged(true);
+        button.setId("myB");
+        button.getStyleClass().add("button");
     }
     private void addButtonClicked(IDatabase database, TableView<Document> tableView) {
         if (choiceManager.isEmpty()) {
