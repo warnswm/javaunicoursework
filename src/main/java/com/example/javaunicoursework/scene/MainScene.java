@@ -11,6 +11,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TableView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -69,6 +70,7 @@ public class MainScene {
 
 
         addButton.setOnAction(e -> addButtonClicked(database, tableView));
+        deleteButton.setOnAction(e -> deleteButtonClicked(database,tableView));
         choiceManager.getStoreChoice().getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue, database, tableView));
         tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateFields(newSelection));
 
@@ -80,6 +82,24 @@ public class MainScene {
         return new Scene(hbox, 1200, 450);
     }
 
+    private void deleteButtonClicked(IDatabase database, TableView<Document> tableView){
+        IField selectedField = choiceManager.getSelectField();
+        if (selectedField instanceof MainFields mainFields) {
+            if (mainFields.getShopNameEntry().getText().isEmpty() | mainFields.getProductNameEntry().getText().isEmpty()) {
+                alert();
+                return;
+            }
+            if (selectedField instanceof LivingRoomFields) {
+                database.deleteFromDatabaseLivingRoom(mainFields.getShopNameEntry().getText(),mainFields.getProductNameEntry().getText());
+
+            } else if (selectedField instanceof KitchenFields) {
+                database.deleteFromDatabaseKitchen(mainFields.getShopNameEntry().getText(),mainFields.getProductNameEntry().getText());
+            } else if (selectedField instanceof BathroomFields) {
+                database.deleteFromDatabaseBathroom(mainFields.getShopNameEntry().getText(),mainFields.getProductNameEntry().getText());
+            }
+            loadDataFromCollection(database, tableView);
+        }
+    }
     private void updateFields(Document newSelection){
         IField selectedField = choiceManager.getSelectField();
         if (newSelection == null) return;
