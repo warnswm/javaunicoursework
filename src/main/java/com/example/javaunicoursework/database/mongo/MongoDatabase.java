@@ -66,7 +66,6 @@ public class MongoDatabase implements IDatabase {
 
     @Override
     public void addToDatabaseKitchen(KitchenFurniture furniture) {
-
         Document document = new Document("shopName", furniture.getShopName())
                 .append("productName", furniture.getProductName())
                 .append("countryOfOrigin", furniture.getCountryOfOrigin())
@@ -108,5 +107,43 @@ public class MongoDatabase implements IDatabase {
             }
         });
         collection.find().forEach(data::add);
+    }
+
+    @Override
+    public void deleteFromDatabaseLivingRoom(String shopName, String productName){
+        Document criteria = new Document("shopName", shopName)
+                .append("productName", productName);
+
+        if (database.getCollection("LivingRoomFurniture").find(criteria).first() != null) {
+            database.getCollection("LivingRoomFurniture").deleteOne(criteria);
+            System.out.println("Document deleted.");
+        } else {
+            System.out.println("Document not find.");
+        }
+    }
+    @Override
+    public void deleteFromDatabaseBathroom(String shopName, String productName){
+        Document criteria = new Document("shopName", shopName)
+                .append("productName", productName);
+
+        if (database.getCollection("BathroomFurniture").find(criteria).first() != null) {
+            database.getCollection("BathroomFurniture").deleteOne(criteria);
+            System.out.println("Document deleted.");
+        } else {
+            System.out.println("Document not find.");
+        }
+    }
+
+    @Override
+    public void deleteFromDatabaseKitchen(String shopName, String productName) {
+        Document criteria = new Document("shopName", shopName)
+                .append("productName", productName);
+
+        if (database.getCollection("KitchenFurniture").find(criteria).first() != null) {
+            database.getCollection("KitchenFurniture").deleteOne(criteria);
+            System.out.println("Document deleted.");
+        } else {
+            System.out.println("Document not find.");
+        }
     }
 }
