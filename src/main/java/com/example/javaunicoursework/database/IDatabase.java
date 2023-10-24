@@ -4,6 +4,7 @@ import com.example.javaunicoursework.shop.BathroomFurniture;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
 import javafx.collections.ObservableList;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableView;
 import org.bson.Document;
 
@@ -24,5 +25,6 @@ public interface IDatabase {
     void deleteFromDatabaseLivingRoom(String shopName, String productName);
     void deleteFromDatabaseBathroom(String shopName, String productName);
     void deleteFromDatabaseKitchen(String shopName, String productName);
+    void updateComboBox(ComboBox<String> comboBox);
 
 }

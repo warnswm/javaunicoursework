@@ -2,21 +2,21 @@ package com.example.javaunicoursework.scene;
 
 import com.example.javaunicoursework.database.IDatabase;
 import com.example.javaunicoursework.field.*;
+import com.example.javaunicoursework.searchBar.AutoCompleteComboBoxListener;
 import com.example.javaunicoursework.shop.BathroomFurniture;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.bson.Document;
 
@@ -41,9 +41,9 @@ public class MainScene {
         grid.getStylesheets().add(css);
         grid.setStyle("fx-padding: 10;" +
                 "-fx-border-style: solid inside;" +
-                "-fx-border-width: 2;" +
-                "-fx-border-insets: 5;" +
-                "-fx-border-radius: 5;" +
+                "-fx-border-width: 2px;" +
+                "-fx-border-insets: 5px;" +
+                "-fx-border-radius: 5px;" +
                 "-fx-border-color: #0BAAE4;");
 
         choiceManager.initChoiceManager(grid);
@@ -64,13 +64,42 @@ public class MainScene {
         tableView.getStylesheets().add(css);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
+        TextField searchField = new TextField();
+        searchField.getStylesheets().add(css);
+        searchField.setPromptText("Search...");
+        searchField.getStyleClass().add("search-field");
+
+        Button searchButton = new Button("Search");
+        searchButton.getStylesheets().add(css);
+        searchButton.getStyleClass().add("search-button");
+        searchButton.setOnAction(event -> {
+            // Обработчик события для кнопки поиска
+            String searchText = searchField.getText();
+            // Добавьте ваш код для обработки поиска здесь
+            System.out.println("Searching for: " + searchText);
+        });
+
+        ComboBox<String> comboBox = new ComboBox<>();
+        database.updateComboBox(comboBox);
+        comboBox.setEditable(true);
+        AutoCompleteComboBoxListener<String> listener = new AutoCompleteComboBoxListener<>(comboBox);
+        comboBox.getEditor().setOnKeyReleased(listener);
+        HBox.setHgrow(searchField, Priority.ALWAYS); // Растягиваем searchField на всю доступную ширину
+        HBox searchBox = new HBox(searchField, comboBox,searchButton);
+        searchBox.getStylesheets().add(css);
+        searchBox.getStyleClass().add("search-box");
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+        choiceManager.getStoreChoice().getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            updateTable(newValue, database, tableView);
+            updateComboBox(newValue, database, comboBox);
+        });
         addButton.setOnAction(e -> addButtonClicked(database, tableView));
         deleteButton.setOnAction(e -> deleteButtonClicked(database,tableView));
-        choiceManager.getStoreChoice().getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateTable(newValue, database, tableView));
         tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateFields(newSelection));
 
         HBox hbox = new HBox();
         VBox vBox = new VBox();
+        vBox.getChildren().add(searchBox);
         vBox.getChildren().add(tableView);
         hbox.getChildren().add(grid);
         hbox.getChildren().add(vBox);
@@ -86,7 +115,6 @@ public class MainScene {
             }
             if (selectedField instanceof LivingRoomFields) {
                 database.deleteFromDatabaseLivingRoom(mainFields.getShopNameEntry().getText(),mainFields.getProductNameEntry().getText());
-
             } else if (selectedField instanceof KitchenFields) {
                 database.deleteFromDatabaseKitchen(mainFields.getShopNameEntry().getText(),mainFields.getProductNameEntry().getText());
             } else if (selectedField instanceof BathroomFields) {
@@ -94,6 +122,15 @@ public class MainScene {
             }
             loadDataFromCollection(database, tableView);
         }
+    }
+    private void updateComboBox(String storeChoice, IDatabase database, ComboBox<String> comboBox){
+        switch (storeChoice) {
+            case "Мебель для гостиных" -> database.selectCollection("LivingRoomFurniture");
+            case "Мебель для кухни" -> database.selectCollection("KitchenFurniture");
+            case "Мебель для ванн" -> database.selectCollection("BathroomFurniture");
+        }
+        comboBox.getItems().clear();
+        database.updateComboBox(comboBox);
     }
     private void updateFields(Document newSelection){
         IField selectedField = choiceManager.getSelectField();

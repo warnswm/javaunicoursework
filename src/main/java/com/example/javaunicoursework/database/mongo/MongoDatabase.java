@@ -5,10 +5,13 @@ import com.example.javaunicoursework.shop.BathroomFurniture;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
 import com.mongodb.MongoException;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import lombok.Getter;
@@ -16,6 +19,11 @@ import lombok.val;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 public class MongoDatabase implements IDatabase {
@@ -146,4 +154,18 @@ public class MongoDatabase implements IDatabase {
             System.out.println("Document not find.");
         }
     }
+
+    @Override
+    public void updateComboBox(ComboBox<String> comboBox) {
+        val selectCollection = collection.find().first();
+        if (selectCollection == null) return;
+        selectCollection.forEach((key, value) -> {
+            if (!key.equals("_id")) {
+                comboBox.getItems().add(key);
+            }
+        });
+    }
+
+
+
 }
