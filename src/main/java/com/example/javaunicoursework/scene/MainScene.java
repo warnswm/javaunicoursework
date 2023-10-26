@@ -34,25 +34,53 @@ public class MainScene {
 
 
     public Scene initScene(IDatabase database) {
+        GridPane grid = createGridPane();
+        ChoiceManager choiceManager = new ChoiceManager();
+        choiceManager.initChoiceManager(grid);
+
+        Button addButton = createButton("Добавить", ADD_BUTTON_URL);
+        Button deleteButton = createButton("Удалить", DELETE_BUTTON_URL);
+        GridPane.setConstraints(addButton, 0, 14);
+        GridPane.setConstraints(deleteButton, 1, 14);
+
+        grid.getChildren().addAll(addButton, deleteButton);
+
+        TableView<Document> tableView = createTableView(database);
+        TextField searchField = createSearchField();
+        ComboBox<String> comboBox = createComboBox(database, searchField);
+        Button searchButton = createSearchButton(searchField, comboBox);
+
+        HBox searchBox = createSearchBox(searchField, comboBox, searchButton);
+        choiceManager.getStoreChoice().getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            updateTable(newValue, database, tableView);
+            updateComboBox(newValue, database, comboBox);
+        });
+        addButton.setOnAction(e -> addButtonClicked(database, tableView));
+        deleteButton.setOnAction(e -> deleteButtonClicked(database, tableView));
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateFields(newSelection));
+        searchField.setOnAction(event -> performSearch(database, tableView, searchField.getText(), comboBox.getValue()));
+
+
+        HBox hbox = new HBox(grid, new VBox(searchBox, tableView));
+        return new Scene(hbox, 1200, 450);
+    }
+
+    private GridPane createGridPane() {
         GridPane grid = new GridPane();
         grid.setVgap(3);
         grid.setPadding(new Insets(20, 20, 20, 20));
         String css = Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm();
         grid.getStylesheets().add(css);
-        grid.setStyle("fx-padding: 10;" +
+        grid.setStyle("-fx-padding: 10;" +
                 "-fx-border-style: solid inside;" +
                 "-fx-border-width: 2px;" +
                 "-fx-border-insets: 5px;" +
                 "-fx-border-radius: 5px;" +
                 "-fx-border-color: #0BAAE4;");
+        return grid;
+    }
 
-        choiceManager.initChoiceManager(grid);
-
-        Button addButton = createButton("Добавить", ADD_BUTTON_URL);
-        Button deleteButton = createButton("Удалить", DELETE_BUTTON_URL);
-        grid.add(addButton, 0, 14);
-        grid.add(deleteButton, 1, 14);
-
+    private TableView<Document> createTableView(IDatabase database) {
         TableView<Document> tableView = new TableView<>();
         tableView.setEditable(false);
         tableView.setPadding(new Insets(5, 0, 0, 0));
@@ -61,51 +89,52 @@ public class MainScene {
         tableView.setItems(data);
         tableView.setPrefWidth(800);
         tableView.setPrefHeight(400);
+        String css = Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm();
         tableView.getStylesheets().add(css);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        return tableView;
+    }
 
+    private TextField createSearchField() {
         TextField searchField = new TextField();
+        String css = Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm();
         searchField.getStylesheets().add(css);
         searchField.setPromptText("Search...");
         searchField.getStyleClass().add("search-field");
+        return searchField;
+    }
 
-        Button searchButton = new Button("Search");
-        searchButton.getStylesheets().add(css);
-        searchButton.getStyleClass().add("search-button");
-        searchButton.setOnAction(event -> {
-            // Обработчик события для кнопки поиска
-            String searchText = searchField.getText();
-            // Добавьте ваш код для обработки поиска здесь
-            System.out.println("Searching for: " + searchText);
-        });
-
+    private ComboBox<String> createComboBox(IDatabase database, TextField searchField) {
         ComboBox<String> comboBox = new ComboBox<>();
         database.updateComboBox(comboBox);
         comboBox.setEditable(true);
         AutoCompleteComboBoxListener<String> listener = new AutoCompleteComboBoxListener<>(comboBox);
         comboBox.getEditor().setOnKeyReleased(listener);
-        HBox.setHgrow(searchField, Priority.ALWAYS); // Растягиваем searchField на всю доступную ширину
-        HBox searchBox = new HBox(searchField, comboBox,searchButton);
+        HBox.setHgrow(searchField, Priority.ALWAYS);
+        return comboBox;
+    }
+
+    private Button createSearchButton(TextField searchField, ComboBox<String> comboBox) {
+        Button searchButton = new Button("Search");
+        String css = Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm();
+        searchButton.getStylesheets().add(css);
+        searchButton.getStyleClass().add("search-button");
+        //searchButton.setOnAction(event -> performSearch(searchField.getText(), comboBox.getValue()));
+        return searchButton;
+    }
+
+    private HBox createSearchBox(TextField searchField, ComboBox<String> comboBox, Button searchButton) {
+        HBox searchBox = new HBox(searchField, comboBox, searchButton);
+        String css = Objects.requireNonNull(getClass().getResource("/style.css")).toExternalForm();
         searchBox.getStylesheets().add(css);
         searchBox.getStyleClass().add("search-box");
         searchBox.setAlignment(Pos.CENTER_LEFT);
-        choiceManager.getStoreChoice().getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            updateTable(newValue, database, tableView);
-            updateComboBox(newValue, database, comboBox);
-        });
-        addButton.setOnAction(e -> addButtonClicked(database, tableView));
-        deleteButton.setOnAction(e -> deleteButtonClicked(database,tableView));
-        tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateFields(newSelection));
-
-        HBox hbox = new HBox();
-        VBox vBox = new VBox();
-        vBox.getChildren().add(searchBox);
-        vBox.getChildren().add(tableView);
-        hbox.getChildren().add(grid);
-        hbox.getChildren().add(vBox);
-        return new Scene(hbox, 1200, 450);
+        return searchBox;
     }
-
+    private void performSearch(IDatabase database,TableView<Document> tableView, String searchText, String filterText) {
+        data.clear();
+        database.updateTableViewAfterSearch(tableView,searchText,filterText,data);
+    }
     private void deleteButtonClicked(IDatabase database, TableView<Document> tableView){
         IField selectedField = choiceManager.getSelectField();
         if (selectedField instanceof MainFields mainFields) {

@@ -22,6 +22,8 @@ public interface IDatabase {
     void selectCollection(String collection);
 
     void updateTableView(TableView<Document> tableView, ObservableList<Document> data);
+    void updateTableViewAfterSearch(TableView<Document> tableView, String searchText, String selectedField, ObservableList<Document> data);
+
     void deleteFromDatabaseLivingRoom(String shopName, String productName);
     void deleteFromDatabaseBathroom(String shopName, String productName);
     void deleteFromDatabaseKitchen(String shopName, String productName);
