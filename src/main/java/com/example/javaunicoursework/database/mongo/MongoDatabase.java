@@ -4,6 +4,7 @@ import com.example.javaunicoursework.database.IDatabase;
 import com.example.javaunicoursework.shop.BathroomFurniture;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
+import com.mongodb.BasicDBObject;
 import com.mongodb.MongoException;
 import com.mongodb.client.*;
 import javafx.collections.FXCollections;
@@ -16,6 +17,10 @@ import lombok.val;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 
 public class MongoDatabase implements IDatabase {
@@ -111,20 +116,64 @@ public class MongoDatabase implements IDatabase {
 
     @Override
     public void updateTableViewAfterSearch(TableView<Document> tableView, String searchText, String selectedField, ObservableList<Document> data) {
-        Document query = new Document(selectedField, searchText);
-        FindIterable<Document> results = collection.find(query);
-        ObservableList<Document> searchResults = FXCollections.observableArrayList();
-        for (Document document : results) {
-            searchResults.add(document);
-        }
+        data.clear();
+        if (searchText.isEmpty()) {
+            tableView.getColumns().clear();
+            updateTableView(tableView, data);
+        } else if ("All".equals(selectedField)) {
+            tableView.getColumns().clear();
+            val selectCollection = collection.find().first();
+            if (selectCollection == null) return;
+            BasicDBObject regexQuery = new BasicDBObject();
+            Pattern pattern = Pattern.compile(searchText, Pattern.CASE_INSENSITIVE);
 
-        tableView.getItems().clear();
-        // Добавляем новые результаты поиска в таблицу
-        tableView.getItems().addAll(searchResults);
+            List<BasicDBObject> orFilters = new ArrayList<>();
+            for (String key : selectCollection.keySet()) {
+                if (!key.equals("_id")) {
+                    BasicDBObject fieldFilter = new BasicDBObject();
+                    fieldFilter.put(key, pattern);
+                    orFilters.add(fieldFilter);
+                }
+            }
+
+            regexQuery.put("$or", orFilters);
+            FindIterable<Document> results = collection.find(regexQuery);
+
+            for (String key : selectCollection.keySet()) {
+                if (!key.equals("_id")) {
+                    TableColumn<Document, Object> column = new TableColumn<>(key);
+                    column.setCellValueFactory(param -> {
+                        Document document = param.getValue();
+                        return javafx.beans.binding.Bindings.createObjectBinding(() -> document.getOrDefault(key, null));
+                    });
+                    tableView.getColumns().add(column);
+                }
+            }
+
+            ObservableList<Document> searchResults = FXCollections.observableArrayList();
+            for (Document document : results) {
+                searchResults.add(document);
+            }
+
+            tableView.getItems().clear();
+            tableView.getItems().addAll(searchResults);
+        } else {
+            // Если выбрано конкретное поле, выполняем поиск только в этом поле
+            Document query = new Document(selectedField, searchText);
+            FindIterable<Document> results = collection.find(query);
+            ObservableList<Document> searchResults = FXCollections.observableArrayList();
+            for (Document document : results) {
+                searchResults.add(document);
+            }
+
+            tableView.getItems().clear();
+            tableView.getItems().addAll(searchResults);
+        }
     }
 
+
     @Override
-    public void deleteFromDatabaseLivingRoom(String shopName, String productName){
+    public void deleteFromDatabaseLivingRoom(String shopName, String productName) {
         Document criteria = new Document("shopName", shopName)
                 .append("productName", productName);
 
@@ -135,8 +184,9 @@ public class MongoDatabase implements IDatabase {
             System.out.println("Document not find.");
         }
     }
+
     @Override
-    public void deleteFromDatabaseBathroom(String shopName, String productName){
+    public void deleteFromDatabaseBathroom(String shopName, String productName) {
         Document criteria = new Document("shopName", shopName)
                 .append("productName", productName);
 
@@ -173,7 +223,6 @@ public class MongoDatabase implements IDatabase {
         });
         comboBox.setValue("All");
     }
-
 
 
 }
