@@ -15,5 +15,9 @@ public class InternetShop {
     double purchaseAmount;
     Date saleDate;
     String customerName;
+
+    public String getName(){
+        return null;
+    }
 }
 

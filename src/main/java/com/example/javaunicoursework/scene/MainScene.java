@@ -4,6 +4,7 @@ import com.example.javaunicoursework.database.IDatabase;
 import com.example.javaunicoursework.field.*;
 import com.example.javaunicoursework.searchBar.AutoCompleteComboBoxListener;
 import com.example.javaunicoursework.shop.BathroomFurniture;
+import com.example.javaunicoursework.shop.InternetShop;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
 import javafx.collections.FXCollections;
@@ -23,27 +24,31 @@ import org.bson.Document;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 public class MainScene {
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+    SimpleDateFormat inputDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
     ChoiceManager choiceManager = new ChoiceManager();
     private final ObservableList<Document> data = FXCollections.observableArrayList();
     private static final String ADD_BUTTON_URL = "https://icon-library.com/images/new-button-icon/new-button-icon-2.jpg";
     private static final String DELETE_BUTTON_URL = "https://cdn-icons-png.flaticon.com/512/1214/1214428.png";
+    private static final String UPDATE_BUTTON_URL = "https://cdn-icons-png.flaticon.com/512/65/65368.png";
 
 
     public Scene initScene(IDatabase database) {
         GridPane grid = createGridPane();
-        ChoiceManager choiceManager = new ChoiceManager();
         choiceManager.initChoiceManager(grid);
 
         Button addButton = createButton("Добавить", ADD_BUTTON_URL);
         Button deleteButton = createButton("Удалить", DELETE_BUTTON_URL);
+        Button updateButton = createButton("Обновить", UPDATE_BUTTON_URL);
         GridPane.setConstraints(addButton, 0, 14);
         GridPane.setConstraints(deleteButton, 1, 14);
+        GridPane.setConstraints(updateButton, 0, 15);
 
-        grid.getChildren().addAll(addButton, deleteButton);
+        grid.getChildren().addAll(addButton, deleteButton,updateButton);
 
         TableView<Document> tableView = createTableView(database);
         TextField searchField = createSearchField();
@@ -57,6 +62,7 @@ public class MainScene {
         });
         addButton.setOnAction(e -> addButtonClicked(database, tableView));
         deleteButton.setOnAction(e -> deleteButtonClicked(database, tableView));
+        updateButton.setOnAction(e -> updateButtonClicked(database,tableView));
         tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> updateFields(newSelection));
         searchField.setOnAction(event -> performSearch(database, tableView, searchField.getText(), comboBox.getValue()));
 
@@ -221,56 +227,6 @@ public class MainScene {
         button.setId("myB");
         button.getStyleClass().add("button");
     }
-    private void addButtonClicked(IDatabase database, TableView<Document> tableView) {
-        if (choiceManager.isEmpty()) {
-            alert();
-            return;
-        }
-        IField selectedField = choiceManager.getSelectField();
-
-        if (selectedField.isEmpty()) {
-            alert();
-            return;
-        }
-
-        if (selectedField instanceof MainFields mainFields) {
-            String shopName = mainFields.getShopNameEntry().getText();
-            String productName = mainFields.getProductNameEntry().getText();
-            String countryOfOrigin = mainFields.getCountryOfOriginEntry().getText();
-            String paymentMethod = mainFields.getPaymentMethodEntry().getText();
-            double purchaseAmount = parseDoubleValue(mainFields.getSellAmountEntry().getText());
-            Date saleDate = null;
-            try {
-                saleDate = dateFormat.parse(mainFields.getSaleDateEntry().getText().replaceAll("[.,]", "/"));
-            } catch (ParseException e) {
-                alert();
-            }
-            if (saleDate == null) return;
-            String customerName = mainFields.getCustomerNameEntry().getText();
-            if (selectedField instanceof KitchenFields) {
-                KitchenFields kitchenFields = (KitchenFields) mainFields;
-                double length = parseDoubleValue(kitchenFields.getLengthEntry().getText());
-                double height = parseDoubleValue(kitchenFields.getHeightEntry().getText());
-                double width = parseDoubleValue(kitchenFields.getWidthEntry().getText());
-                String material = kitchenFields.getMaterialEntry().getText();
-                KitchenFurniture kitchenFurniture = new KitchenFurniture(shopName, productName, countryOfOrigin, paymentMethod,
-                        purchaseAmount, saleDate, customerName, length, height, width, material);
-                database.addToDatabaseKitchen(kitchenFurniture);
-            } else if (selectedField instanceof LivingRoomFields) {
-                LivingRoomFields livingRoomFields = (LivingRoomFields) mainFields;
-                String furnitureType = livingRoomFields.getFurnitureTypeEntry().getText();
-                String manufacturer = livingRoomFields.getManufacturerEntry().getText();
-                LivingRoomFurniture livingRoomFurniture = new LivingRoomFurniture(shopName, productName, countryOfOrigin, paymentMethod,
-                        purchaseAmount, saleDate, customerName, furnitureType, manufacturer);
-                database.addToDatabaseLivingRoom(livingRoomFurniture);
-            } else if (selectedField instanceof BathroomFields) {
-                BathroomFurniture bathroomFurniture = new BathroomFurniture(shopName, productName, countryOfOrigin, paymentMethod,
-                        purchaseAmount, saleDate, customerName);
-                database.addToDatabaseBathroom(bathroomFurniture);
-            }
-        }
-        loadDataFromCollection(database, tableView);
-    }
 
     private void alert() {
         Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -288,4 +244,64 @@ public class MainScene {
             return 0.0;
         }
     }
+
+    private void handleButtonClick(IDatabase database, TableView<Document> tableView, BiConsumer<IDatabase, InternetShop> action) {
+        if (choiceManager.isEmpty() || choiceManager.getSelectField().isEmpty()) {
+            alert();
+            return;
+        }
+
+        MainFields mainFields = (MainFields) choiceManager.getSelectField();
+
+        InternetShop furniture;
+        try {
+            furniture = createFurniture(mainFields);
+        } catch (ParseException e) {
+            alert();
+            return;
+        }
+
+        if (furniture != null) {
+            action.accept(database, furniture);
+            loadDataFromCollection(database, tableView);
+        }
+    }
+
+    private InternetShop createFurniture(MainFields mainFields) throws ParseException {
+        String shopName = mainFields.getShopNameEntry().getText();
+        String productName = mainFields.getProductNameEntry().getText();
+        String countryOfOrigin = mainFields.getCountryOfOriginEntry().getText();
+        String paymentMethod = mainFields.getPaymentMethodEntry().getText();
+        double purchaseAmount = parseDoubleValue(mainFields.getSellAmountEntry().getText());
+        Date saleDate = inputDateFormat.parse(mainFields.getSaleDateEntry().getText());
+        String customerName = mainFields.getCustomerNameEntry().getText();
+
+        if (mainFields instanceof KitchenFields kitchenFields) {
+            return new KitchenFurniture(shopName, productName, countryOfOrigin, paymentMethod,
+                    purchaseAmount, saleDate, customerName,
+                    parseDoubleValue(kitchenFields.getLengthEntry().getText()),
+                    parseDoubleValue(kitchenFields.getHeightEntry().getText()),
+                    parseDoubleValue(kitchenFields.getWidthEntry().getText()),
+                    kitchenFields.getMaterialEntry().getText());
+        } else if (mainFields instanceof LivingRoomFields livingRoomFields) {
+            return new LivingRoomFurniture(shopName, productName, countryOfOrigin, paymentMethod,
+                    purchaseAmount, saleDate, customerName,
+                    livingRoomFields.getFurnitureTypeEntry().getText(),
+                    livingRoomFields.getManufacturerEntry().getText());
+        } else if (mainFields instanceof BathroomFields) {
+            return new BathroomFurniture(shopName, productName, countryOfOrigin, paymentMethod,
+                    purchaseAmount, saleDate, customerName);
+        }
+
+        return null;
+    }
+
+    private void updateButtonClicked(IDatabase database, TableView<Document> tableView) {
+        handleButtonClick(database, tableView, IDatabase::update);
+    }
+
+    private void addButtonClicked(IDatabase database, TableView<Document> tableView) {
+        handleButtonClick(database, tableView, IDatabase::addToDatabase);
+    }
+
 }

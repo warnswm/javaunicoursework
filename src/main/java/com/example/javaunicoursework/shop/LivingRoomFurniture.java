@@ -14,4 +14,8 @@ public class LivingRoomFurniture extends InternetShop {
         this.furnitureType = furnitureType;
         this.manufacturer = manufacturer;
     }
+    @Override
+    public String getName(){
+        return "LivingRoomFurniture";
+    }
 }

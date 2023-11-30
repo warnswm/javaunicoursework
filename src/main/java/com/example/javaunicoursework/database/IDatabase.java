@@ -1,6 +1,7 @@
 package com.example.javaunicoursework.database;
 
 import com.example.javaunicoursework.shop.BathroomFurniture;
+import com.example.javaunicoursework.shop.InternetShop;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
 import javafx.collections.ObservableList;
@@ -10,14 +11,9 @@ import org.bson.Document;
 
 public interface IDatabase {
     void connect();
-
-    void addToDatabaseLivingRoom(LivingRoomFurniture furniture);
-
-    void addToDatabaseBathroom(BathroomFurniture furniture);
-
-    void addToDatabaseKitchen(KitchenFurniture furniture);
-
-    void closeConnection();
+    void addToDatabase(InternetShop furniture);
+    void update(InternetShop furniture);
+   void closeConnection();
 
     void selectCollection(String collection);
 
