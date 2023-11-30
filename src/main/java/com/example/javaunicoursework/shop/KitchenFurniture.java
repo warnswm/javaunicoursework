@@ -19,4 +19,9 @@ public class KitchenFurniture extends InternetShop {
         this.width = width;
         this.material = material;
     }
+
+    @Override
+    public String getName(){
+        return "KitchenFurniture";
+    }
 }

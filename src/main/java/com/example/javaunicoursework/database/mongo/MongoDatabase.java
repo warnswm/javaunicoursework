@@ -2,11 +2,14 @@ package com.example.javaunicoursework.database.mongo;
 
 import com.example.javaunicoursework.database.IDatabase;
 import com.example.javaunicoursework.shop.BathroomFurniture;
+import com.example.javaunicoursework.shop.InternetShop;
 import com.example.javaunicoursework.shop.KitchenFurniture;
 import com.example.javaunicoursework.shop.LivingRoomFurniture;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoException;
 import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ComboBox;
@@ -14,7 +17,9 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import lombok.Getter;
 import lombok.val;
+import org.bson.BsonDocument;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,22 +47,7 @@ public class MongoDatabase implements IDatabase {
     }
 
     @Override
-    public void addToDatabaseLivingRoom(LivingRoomFurniture furniture) {
-        Document document = new Document("shopName", furniture.getShopName())
-                .append("productName", furniture.getProductName())
-                .append("countryOfOrigin", furniture.getCountryOfOrigin())
-                .append("paymentMethod", furniture.getPaymentMethod())
-                .append("purchaseAmount", furniture.getPurchaseAmount())
-                .append("saleDate", furniture.getSaleDate())
-                .append("customerName", furniture.getCustomerName())
-                .append("furnitureType", furniture.getFurnitureType())
-                .append("manufacturer", furniture.getManufacturer());
-        collection = database.getCollection("LivingRoomFurniture");
-        collection.insertOne(document);
-    }
-
-    @Override
-    public void addToDatabaseBathroom(BathroomFurniture furniture) {
+    public void addToDatabase(InternetShop furniture) {
         Document document = new Document("shopName", furniture.getShopName())
                 .append("productName", furniture.getProductName())
                 .append("countryOfOrigin", furniture.getCountryOfOrigin())
@@ -65,26 +55,52 @@ public class MongoDatabase implements IDatabase {
                 .append("purchaseAmount", furniture.getPurchaseAmount())
                 .append("saleDate", furniture.getSaleDate())
                 .append("customerName", furniture.getCustomerName());
-        collection = database.getCollection("BathroomFurniture");
+
+        if (furniture instanceof KitchenFurniture kitchenFurniture) {
+            document.append("length", kitchenFurniture.getLength())
+                    .append("height", kitchenFurniture.getHeight())
+                    .append("width", kitchenFurniture.getWidth())
+                    .append("material", kitchenFurniture.getMaterial());
+        }
+        if (furniture instanceof LivingRoomFurniture livingRoomFurniture){
+            document.append("furnitureType", livingRoomFurniture.getFurnitureType())
+                    .append("manufacturer", livingRoomFurniture.getManufacturer());
+        }
+
+        collection = database.getCollection(furniture.getName());
         collection.insertOne(document);
     }
 
     @Override
-    public void addToDatabaseKitchen(KitchenFurniture furniture) {
+    public void update(InternetShop furniture) {
+        Bson filter = Filters.eq("productName", furniture.getProductName());
+        Bson update;
+
         Document document = new Document("shopName", furniture.getShopName())
                 .append("productName", furniture.getProductName())
                 .append("countryOfOrigin", furniture.getCountryOfOrigin())
                 .append("paymentMethod", furniture.getPaymentMethod())
                 .append("purchaseAmount", furniture.getPurchaseAmount())
                 .append("saleDate", furniture.getSaleDate())
-                .append("customerName", furniture.getCustomerName())
-                .append("length", furniture.getLength())
-                .append("height", furniture.getHeight())
-                .append("width", furniture.getWidth())
-                .append("material", furniture.getMaterial());
-        collection = database.getCollection("KitchenFurniture");
-        collection.insertOne(document);
+                .append("customerName", furniture.getCustomerName());
+
+        if (furniture instanceof KitchenFurniture kitchenFurniture) {
+            document.append("length", kitchenFurniture.getLength())
+                    .append("height", kitchenFurniture.getHeight())
+                    .append("width", kitchenFurniture.getWidth())
+                    .append("material", kitchenFurniture.getMaterial());
+        } else if (furniture instanceof LivingRoomFurniture livingRoomFurniture) {
+            document.append("furnitureType", livingRoomFurniture.getFurnitureType())
+                    .append("manufacturer", livingRoomFurniture.getManufacturer());
+        }
+
+        update = new Document("$set", document);
+
+        collection = database.getCollection(furniture.getName());
+        collection.updateOne(filter, update);
     }
+
+
 
     @Override
     public void closeConnection() {
@@ -158,7 +174,6 @@ public class MongoDatabase implements IDatabase {
             tableView.getItems().clear();
             tableView.getItems().addAll(searchResults);
         } else {
-            // Если выбрано конкретное поле, выполняем поиск только в этом поле
             Document query = new Document(selectedField, searchText);
             FindIterable<Document> results = collection.find(query);
             ObservableList<Document> searchResults = FXCollections.observableArrayList();
@@ -171,9 +186,8 @@ public class MongoDatabase implements IDatabase {
         }
     }
 
-
     @Override
-    public void deleteFromDatabaseLivingRoom(String shopName, String productName) {
+    public void deleteFromDatabaseLivingRoom(String shopName, String productName){
         Document criteria = new Document("shopName", shopName)
                 .append("productName", productName);
 
@@ -184,9 +198,8 @@ public class MongoDatabase implements IDatabase {
             System.out.println("Document not find.");
         }
     }
-
     @Override
-    public void deleteFromDatabaseBathroom(String shopName, String productName) {
+    public void deleteFromDatabaseBathroom(String shopName, String productName){
         Document criteria = new Document("shopName", shopName)
                 .append("productName", productName);
 
@@ -223,6 +236,7 @@ public class MongoDatabase implements IDatabase {
         });
         comboBox.setValue("All");
     }
+
 
 
 }
